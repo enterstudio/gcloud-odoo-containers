@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+#  name: pv-nfs-odoo-config
+#  name: pv-nfs-odoo-extra
+  name: pv-nfs-odoo
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    #this will be changed after nfs server is ready
+    server: 10.52.8.3
+    path: "/"
+    readOnly: false
+

@@ -1,0 +1,45 @@
+# NFS POD / SERVER (PERSISTEN DISK SHARING)
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nfs-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nfs-server
+        role: backend
+        #env: staging
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: nfs-server
+        image: gcr.io/google_containers/volume-nfs:0.8
+#        image: jsafrane/nfsexporter
+        #imagePullPolicy: Always
+        ports:
+          - name: nfs
+#            hostPort: 2049
+            containerPort: 2049
+#            protocol: TCP
+          - name: mountd
+#            hostPort: 20048
+            containerPort: 20048
+#            protocol: UDP
+          - name: rpcbind
+#            hostPort: 111
+            containerPort: 111
+        volumeMounts:
+          - mountPath: "/exports"
+            name: nfs-pd
+        securityContext:
+            privileged: true
+        resources:
+          requests:
+            cpu: 10m
+      volumes:
+        - name: nfs-pd
+          gcePersistentDisk:
+            pdName: odoo-addons
+            fsType: ext4

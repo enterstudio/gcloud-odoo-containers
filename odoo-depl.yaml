@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: odoo
+spec:
+  replicas: 5
+  template:
+    metadata:
+      labels:
+        app: odoo
+    spec:
+      containers:
+        - image: odoo
+          name: odoo
+          env:
+            - name: HOST
+              value: 127.0.0.1
+#            - name: PORT
+#              value: 5432
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-db-credentials
+                  key: password
+            - name: USER
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-db-credentials
+                  key: username
+            # [END cloudsql_secrets]
+          ports:
+            - containerPort: 80
+              name: odoo
+          volumeMounts:
+            - name: odoo-filestore
+              mountPath: /var/lib/odoo
+            - name: odoo-extra
+              mountPath: /mnt/extra-addons
+            - name: odoo-config
+              mountPath: /etc/odoo
+
+        - image: gcr.io/cloudsql-docker/gce-proxy:1.09
+          name: cloudsql-proxy
+          command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+                    "-instances=odoo-loadbalancing:europe-west1:odoodb=tcp:5432",
+                    "-credential_file=/secrets/cloudsql/credentials.json"]
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+            - name: cloudsql
+              mountPath: /cloudsql
+        # [END proxy_container]
+      # [START volumes]
+      volumes:
+        - name: odoo-filestore
+          persistentVolumeClaim:
+            claimName: pvc-nfs-odoo-fielstore
+        - name: odoo-extra
+          persistentVolumeClaim:
+            claimName: pvc-nfs-odoo-extra
+        - name: odoo-config
+          persistentVolumeClaim:
+            claimName: pvc-nfs-odoo-config
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        - name: ssl-certs
+          hostPath:
+            path: /etc/ssl/certs
+        - name: cloudsql
+          emptyDir:
+      # [END volumes]

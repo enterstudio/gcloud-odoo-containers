@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+#  name: pvc-nfs-odoo-config
+#  name: pvc-nfs-odoo-extra
+  name: pvc-nfs-odoo-fielstore
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
